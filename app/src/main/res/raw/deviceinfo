@@ -1,0 +1,20 @@
+{
+    "productKey": "a1KiHgH1DKF",
+    "deviceName": "cs101",
+    "productSecret": "nBdHgxetPnAIxcaR",
+    "deviceSecret": "W0s1rWphk4RQcF0l0QVu2Wzgy5wsOBnr",
+    "subDevice": [
+      {
+          "productKey": "",
+          "deviceName": ""
+      },
+      {
+          "productKey": "",
+          "deviceName": ""
+      },
+      {
+          "productKey": "",
+          "deviceName": ""
+      }
+  ]
+}
