@@ -30,19 +30,26 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 
+import com.aliyun.alink.devicesdk.app.AppLog;
+import com.aliyun.alink.devicesdk.manager.ToastUtils;
 import com.aliyun.alink.dm.api.IOta;
 import com.aliyun.alink.dm.api.OtaInfo;
 import com.aliyun.alink.dm.api.ResultCallback;
 import com.aliyun.alink.linkkit.api.LinkKit;
+import com.aliyun.alink.linksdk.tools.ALog;
 
 import java.io.File;
+import java.util.Map;
 
-public class OTAActivity extends BaseActivity {
+public class OTAActivity extends BaseActivity implements IOta.OtaListener {
+    private static final String TAG = "OTAActivity";
 
     private IOta mOta;
     private EditText mText;
     private OtaInfo mInfo;
     private int mProgress;
+    private IOta.OtaConfig mConfig;
+    private OtaInfo otaInfo;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,132 +62,152 @@ public class OTAActivity extends BaseActivity {
         init();
     }
 
-    void init(){
-        mOta = LinkKit.getInstance().getOta();
+    void init() {
+        mOta = (IOta) LinkKit.getInstance().getOta();
     }
 
-    public void reportVersion(View view){
-        String version = "0.0.1";
-        if (!TextUtils.isEmpty(mText.getText())){
+    public void startOta(View view) {
+        String version = "";
+        if (!TextUtils.isEmpty(mText.getText())) {
             version = mText.getText().toString();
         }
 
-        log(TAG, "reportVersion:" + version);
-        final String finalVersion = version;
-        mOta.reportVersion(version, new ResultCallback<String>() {
-            @Override
-            public void onRusult(int error, String data) {
-                showToast("上报版本 " + finalVersion + " " + (error == ResultCallback.SUCCESS ? "成功" : "失败"));
-            }
-        });
-    }
-
-    public void subscribe(View view){
-        mOta.subscribeOtaInfo(new IOta.SubscribeListener() {
-            @Override
-            public void onSubscribeResult(int error, String errorMessage) {
-                showToast("订阅OTA " + (error == ResultCallback.SUCCESS ? "成功" : "失败"));
-            }
-
-            @Override
-            public void onOtaData(OtaInfo data) {
-                Log.d(TAG,  " data:" + data);
-
-                mInfo = data;
-                showToast("收到OTA 下推通知，可以开始OTA 升级");
-            }
-        });
-    }
-
-    public void unSubscribe(View view){
-        mOta.unSubscribeOtaInfo(new ResultCallback<String>() {
-            @Override
-            public void onRusult(int error, String data) {
-                showToast("取消订阅OTA " + (error == ResultCallback.SUCCESS ? "成功" : "失败"));
-            }
-        });
-    }
-
-    public void startDownload(View view){
-        if (null != mInfo){
-
-            File apkDir = new File(getCacheDir(), "apk");
-            apkDir.mkdirs();
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-                apkDir = Environment.getExternalStorageDirectory();
-            }
-            final String filePath = new File(apkDir, mInfo.version + ".apk").getPath();
-            mOta.startDownload(filePath, mInfo, new IOta.OnDownloadListener() {
-                @Override
-                public void onProgress(int progress, String desc) {
-                    Log.d(TAG, "onProgress. progress:" + progress + " desc:" + desc);
-
-                    if (mProgress != progress) {
-                        mProgress = progress;
-
-                        boolean toast = mProgress % 10 == 0;
-                        reportProgress(progress, "progress:" + progress, toast);
-
-                        if (100 == progress) {
-                            File apkFile = new File(filePath);
-
-                            Intent install = new Intent(Intent.ACTION_VIEW);
-                            install.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-                            Uri contentUri = null;
-
-                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-                                apkFile.setReadable(true);
-                                contentUri = Uri.fromFile(apkFile);
-                            } else {
-                                contentUri = FileProvider.getUriForFile(OTAActivity.this, "com.aliyun.alink.devicesdk.demo.fileprovider", apkFile);
-                            }
-
-                            install.setDataAndType(contentUri, "application/vnd.android.package-archive");
-                            install.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                            startActivity(install);
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    public void stopDownload(View view){
-        mOta.stopDownload();
-    }
-
-    public void reportOtaProgress(View view){
-        reportProgress(mProgress, " test", true);
-    }
-
-    public void reportOtaSuccess(View view){
-        if (null == mInfo) {
-            showToast("没有固件信息");
+        if (TextUtils.isEmpty(version)) {
+            showToast("版本 为空");
             return;
         }
 
-        String version = mInfo.version;
         log(TAG, "reportVersion:" + version);
         final String finalVersion = version;
-        mOta.reportVersion(version, new ResultCallback<String>() {
-            @Override
-            public void onRusult(int error, String data) {
-                showToast("上报版本 " + finalVersion + " " + (error == ResultCallback.SUCCESS ? "成功" : "失败"));
-            }
-        });
+
+        File apkDir = new File(getCacheDir(), "apk");
+        apkDir.mkdirs();
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            apkDir = Environment.getExternalStorageDirectory();
+        }
+        final String filePath = new File(apkDir, finalVersion + ".apk").getPath();
+        mConfig = new IOta.OtaConfig();
+        mConfig.otaFile = new File(filePath);
+        mConfig.deviceVersion = finalVersion;
+        mOta.tryStartOta(mConfig, this);
     }
 
-    void reportProgress(final int progress, String desc, final boolean showToast){
-        mOta.reportProgress(progress, desc, new ResultCallback<String>() {
-            @Override
-            public void onRusult(int error, String data) {
-                if (showToast) {
-                    showToast("上报进度 " + progress + " " + (error == ResultCallback.SUCCESS ? "成功" : "失败"));
+    public void activeQueryOta(View view) {
+        //default表示默认模块.
+        //用户如果指定了基于模块的ota任务, 则需要在入参中指定模块名称
+        mOta.tryGetOtaFirmware("default");
+    }
+
+    private static ResultCallback<String> textCallback = new ResultCallback<String>() {
+        @Override
+        public void onRusult(int error, String s) {
+            String text = "上报" + ((error == ResultCallback.SUCCESS) ? "成功" : "失败");
+//            showToast(text);
+            AppLog.d(TAG, text);
+        }
+    };
+
+    @Override
+    public boolean onOtaProgress(int step, IOta.OtaResult otaResult) {
+        int code = otaResult.getErrorCode();
+        Object data = otaResult.getData();
+        Map extra = otaResult.getExtData();
+        if (data instanceof Integer && mProgress != (int)data) {
+            AppLog.d(TAG, "code:" + code + " data:" + data + " extra:" + extra);
+        }
+        if (code != IOta.NO_ERROR) {
+            AppLog.e(TAG, "onOtaProgress error:" + code);
+            // show tip for uses.
+            return false;
+        }
+
+        switch (step) {
+            case IOta.STEP_SUBSCRIBE:
+                AppLog.d(TAG, "STEP_SUBSCRIBE");
+                break;
+
+            case IOta.STEP_RCVD_OTA:
+                AppLog.d(TAG, "STEP_RCVD_OTA");
+                otaInfo = (OtaInfo) otaResult.getData();
+                break;
+            case IOta.STEP_DOWNLOAD:
+                AppLog.d(TAG, "STEP_DOWNLOAD");
+                if (data instanceof Integer) {
+                    int progress = (int) data;
+                    if (mProgress != progress) {
+                        mProgress = progress;
+                        if (mProgress % 10 == 0) {
+                            mOta.reportProgress(progress, "desc", textCallback);
+                        }
+                    }
+
+                    if (100 == progress) {
+                        if (otaInfo != null && otaInfo.isDiff == 1) {
+                            ToastUtils.showToast("差分包，不执行安装");
+                            // 测试代码，apk才要走以下逻辑
+
+                        } else {
+                            try {
+                                installApk(mConfig.otaFile.getPath());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
                 }
-            }
-        });
+                break;
+
+            case IOta.STEP_REPORT_VERSION:
+                AppLog.d(TAG, "STEP_REPORT_VERSION");
+                break;
+        }
+        return true;
     }
 
 
+    /**
+     * 如果需要定制化上报的进度，比如下载占50%，其它流程占50%，可自行调用上报进度接口
+     * 在本demo示例，已下载的进度作为升级的进度
+     *
+     * @param view
+     */
+    public void reportOtaProgress(View view) {
+        int progress = 77;
+        try {
+            if (!TextUtils.isEmpty(mText.getText())) {
+                progress = Integer.parseInt(mText.getText().toString());
+            }
+        } catch (Exception e) {
+            showToast("进度不合法");
+            return;
+        }
+        mOta.reportProgress(progress, "desc", textCallback);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        mOta.tryStopOta();
+    }
+
+    void installApk(String apkPath) {
+        File apkFile = new File(apkPath);
+
+        Intent install = new Intent(Intent.ACTION_VIEW);
+        install.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        Uri contentUri = null;
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            apkFile.setReadable(true);
+            contentUri = Uri.fromFile(apkFile);
+        } else {
+            contentUri = FileProvider.getUriForFile(OTAActivity.this, "com.aliyun.alink.devicesdk.demo.auth_fileprovider", apkFile);
+        }
+
+        install.setDataAndType(contentUri, "application/vnd.android.package-archive");
+        install.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(install);
+    }
 }

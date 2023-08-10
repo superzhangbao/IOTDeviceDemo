@@ -25,19 +25,22 @@
             android:id="@+id/value_text"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:hint="@string/control_pannel_hint"
             android:gravity="center_vertical"
             android:background="@null"/>
         <Button
             android:id="@+id/post_property_button"
             android:layout_alignParentRight="true"
             android:onClick="postProperty"
+            android:hint="input json string"
             android:layout_width="80dp"
             android:layout_height="match_parent"
-            android:text="上报"/>
+            android:text="属性上报"/>
     </RelativeLayout>
 
     <RelativeLayout
         android:layout_below="@id/property_layout"
+        android:id="@+id/event_layout"
         android:layout_width="match_parent"
         android:layout_marginTop="10dp"
         android:layout_height="80dp">
@@ -52,6 +55,7 @@
             android:id="@+id/event_value"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:hint="@string/control_pannel_hint"
             android:gravity="center_vertical"
             android:background="@null"/>
         <Button
@@ -60,7 +64,14 @@
             android:onClick="postEvent"
             android:layout_width="80dp"
             android:layout_height="match_parent"
-            android:text="上报"/>
+            android:text="事件上报"/>
     </RelativeLayout>
-
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/event_layout"
+        android:focusable="false"
+        android:textSize="20sp"
+        android:layout_marginTop="10dp"
+        android:text="@string/control_pannel_data_format"/>
 </RelativeLayout>

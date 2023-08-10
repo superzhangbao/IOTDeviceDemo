@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/id_user_login"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="订阅/发布演示\n"
+        android:textColorHighlight="@android:color/primary_text_dark"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true"
+        android:textSize="20dp"/>
+
+    <Space
+        android:layout_width="200dp"
+        android:layout_height="20dp" />
+
+
+    <LinearLayout
+        android:id="@+id/sub_dialog"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/sub_topic"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="订阅消息:\n"
+            android:textColorHighlight="@android:color/primary_text_dark"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"
+            android:textSize="20dp"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/qos_level"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/is_rrpc"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="是否rrpc topic:\n"
+            android:textColorHighlight="@android:color/primary_text_dark"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"
+            android:textSize="20dp"/>
+
+        <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <RadioButton android:id="@+id/radio_pirates1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="是"
+                android:onClick="onRRPC"/>
+            <RadioButton android:id="@+id/radio_ninjas2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="否"
+                android:onClick="onNotRRPC"/>
+        </RadioGroup>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/communication_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal">
+        <TextView
+            android:id="@+id/subscribe_topic_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="订阅topic:\n"
+            android:textColorHighlight="@android:color/primary_text_dark"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"
+            android:textSize="20dp"/>
+
+        <EditText
+            android:id="@+id/subscribe_topic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/subscribe_topic_title"
+            android:gravity="center_vertical" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/sub_button_item"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/button_sub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="订阅"></Button>
+    </LinearLayout>
+
+
+
+    <Space
+        android:layout_width="200dp"
+        android:layout_height="50dp" />
+
+    <TextView
+        android:id="@+id/blank2"
+        android:layout_width="match_parent"
+        android:layout_height="25dp"
+        android:text="发布消息\n"
+
+        android:textColorHighlight="@android:color/primary_text_dark"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true"
+        android:textSize="20dp"/>
+
+    <RelativeLayout
+        android:id="@+id/dn"
+        android:layout_width="match_parent"
+        android:layout_height="80dp">
+
+        <TextView
+            android:id="@+id/publish_topic_title"
+            android:layout_width="wrap_content"
+            android:layout_height="80dp"
+            android:gravity="center_vertical"
+            android:text=" topic: "
+            android:textSize="15dp" />
+
+        <EditText
+            android:id="@+id/publish_topic"
+            android:layout_width="wrap_content"
+            android:layout_height="80dp"
+            android:layout_toRightOf="@id/publish_topic_title"
+            android:gravity="center_vertical" />
+        >
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/ds"
+        android:layout_width="match_parent"
+        android:layout_height="40dp">
+
+        <TextView
+            android:id="@+id/payload"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:text="数据: "
+            />
+        <EditText
+            android:id="@+id/pub_payload"
+            android:layout_width="match_parent"
+            android:textSize="12dp"
+            android:layout_height="match_parent"
+            android:layout_toRightOf="@id/payload"
+            android:gravity="center_vertical" />
+        >
+    </RelativeLayout>
+
+
+
+
+    <LinearLayout
+        android:id="@+id/qos_level_for_pub"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/qos_type_for_pub"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="Qos 级别:\n"
+            android:textColorHighlight="@android:color/primary_text_dark"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"
+            android:textSize="20dp"/>
+
+        <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <RadioButton android:id="@+id/radio_pirates_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:checked="true"
+                android:onClick="onSetQos0ForPub"/>
+            <RadioButton android:id="@+id/radio_ninjas_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1"
+                android:onClick="onSetQos1ForPub"/>
+        </RadioGroup>
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/pub_dialog"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/button_pub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="发布"></Button>
+    </LinearLayout>
+
+
+</LinearLayout>

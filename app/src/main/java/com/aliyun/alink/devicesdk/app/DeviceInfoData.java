@@ -30,10 +30,31 @@ public class DeviceInfoData extends DeviceInfo {
      * 与网关关联的子设备信息
      * 后续网关测试demo 会 添加子设备 删除子设备 建立 topo关系 子设备上下线等
      */
-    public List<BaseInfo> subDevice = null;
+    public List<DeviceInfo> subDevice = null;
+    public String password = null;
+    public String username = null;
+    public String clientId = null;
+
+    //旧公共分区, pk.region; 无instanceId
+    //新公共实例, 企业实例,下述都有
+    //todo 重点说明一下
+    public String mqttHost = null;
+    public String instanceId = null;
+
+    /**
+     * 动态注册类型
+     */
+    public String registerType = null;
+    public String deviceToken = null;
 
     @Override
     public String toString() {
-        return JSONObject.toJSONString(this);
+        return "DeviceInfoData{" +
+                "subDevice=" + subDevice +
+                ", password='" + password + '\'' +
+                ", username='" + username + '\'' +
+                ", clientId='" + clientId + '\'' +
+                ", deviceToken='" + deviceToken + '\'' +
+                '}';
     }
 }

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">LinkKit Demo</string>
+    <string name="app_name">LinkKitv2</string>
 
     <string name="devicedetail_properties">属性列表</string>
     <string name="devicedetail_propertynamedesc">属性名:</string>
@@ -39,4 +39,10 @@
 
 
     <string name="control_pannel_device_name"> 设备类型：%1$s </string>
+    <string name="control_pannel_hint"> 参照下方输入示例 </string>
+    <string name="control_pannel_data_format"> 物模型为key-value格式,这里需要输入value：
+        \n 整型参考输入: 1 \n 布尔型参考输入: 0
+        \n 浮点参考输入: 1.2
+        \n 字符参考输入: demoString
+    </string>
 </resources>

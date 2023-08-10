@@ -14,6 +14,7 @@ import android.widget.TextView;
 import com.alibaba.fastjson.JSONObject;
 import com.aliyun.alink.devicesdk.adapter.EventListAdapter;
 import com.aliyun.alink.devicesdk.adapter.PropertyListAdapter;
+import com.aliyun.alink.devicesdk.app.AppLog;
 import com.aliyun.alink.devicesdk.app.DemoApplication;
 import com.aliyun.alink.dm.api.BaseInfo;
 import com.aliyun.alink.dm.api.DeviceInfo;
@@ -36,11 +37,9 @@ import com.aliyun.alink.linksdk.tmp.utils.ErrorInfo;
 import com.aliyun.alink.linksdk.tmp.utils.GsonUtils;
 import com.aliyun.alink.linksdk.tmp.utils.TmpConstant;
 import com.aliyun.alink.linksdk.tools.AError;
-import com.aliyun.alink.linksdk.tools.ALog;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,9 +61,11 @@ import java.util.regex.Pattern;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * 物模型使用 activity
+ * 包括：属性、时间上报、服务订阅、服务下行监听、二进制数据上报示例
  */
 
-public class ControlPannelActivity extends BaseActivity {
+public class TSLActivity extends BaseActivity {
     private static final String TAG = "ControlPannelActivity";
 
     private Spinner mPropertySpinner = null;
@@ -113,7 +114,7 @@ public class ControlPannelActivity extends BaseActivity {
 
         try {
             if (intent == null || intent.getExtras() == null){
-                ALog.d(TAG, "intent with no data. Non sub device.");
+                AppLog.d(TAG, "intent with no data. Non sub device.");
                 productKey = DemoApplication.productKey;
                 deviceName = DemoApplication.deviceName;
                 isSubDev = false;
@@ -141,7 +142,7 @@ public class ControlPannelActivity extends BaseActivity {
         LinkKit.getInstance().getGateway().initSubDeviceThing(null, deviceInfo, subDevInitState, new IDMCallback<InitResult>() {
             @Override
             public void onSuccess(InitResult initResult) {
-                Log.d(TAG, "onSuccess() called with: initResult = [" + initResult + "]");
+                AppLog.d(TAG, "onSuccess() called with: initResult = [" + initResult + "]");
                 showToast("子设备初始化完成");
                 setServiceHandler();
                 initValues();
@@ -149,7 +150,7 @@ public class ControlPannelActivity extends BaseActivity {
 
             @Override
             public void onFailure(AError aError) {
-                Log.d(TAG, "onFailure() called with: aError = [" + (aError==null?null:(aError.getCode()+aError.getMsg())) + "]");
+                AppLog.d(TAG, "onFailure() called with: aError = [" + (aError==null?null:(aError.getCode()+aError.getMsg())) + "]");
                 showToast("子设备初始化失败");
             }
         });
@@ -172,7 +173,7 @@ public class ControlPannelActivity extends BaseActivity {
         mPropertySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                Log.d(TAG, "property onItemSelected() called with: parent = [" + parent + "], view = [" + view + "], position = [" + position + "], id = [" + id + "]");
+                AppLog.d(TAG, "property onItemSelected() called with: parent = [" + parent + "], view = [" + view + "], position = [" + position + "], id = [" + id + "]");
                 Property property = (Property) adapter.getItem(position);
                 updatePropertyValue(property);
             }
@@ -191,7 +192,7 @@ public class ControlPannelActivity extends BaseActivity {
         mEventSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                Log.d(TAG, "event onItemSelected() called with: parent = [" + parent + "], view = [" + view + "], position = [" + position + "], id = [" + id + "]");
+                AppLog.d(TAG, "event onItemSelected() called with: parent = [" + parent + "], view = [" + view + "], position = [" + position + "], id = [" + id + "]");
             }
 
             @Override
@@ -225,7 +226,7 @@ public class ControlPannelActivity extends BaseActivity {
     }
 
     private boolean isValidInt(String value) {
-        return !TextUtils.isEmpty(value) && TextUtils.isDigitsOnly(value);
+        return !TextUtils.isEmpty(value);
     }
 
 
@@ -278,6 +279,11 @@ public class ControlPannelActivity extends BaseActivity {
     private void report(String identifier, ValueWrapper valueWrapper) {
         reportData.clear();
         Map<String, ValueWrapper> reportData  = new HashMap<>();
+        /**
+         * 物模型默认的模块中,属性的identifer是不用加前缀的. 比如名为lightSwitch的属性, identifer就是lightSwitch
+         * 如果是用户自定义的模块,属性的identifer前要加"模块名:"这样的前缀. 比如myBlock模块中的lightSwitch属性,
+         * identifer就要写成"myBlock:lightSwitch"
+         */
         reportData.put(identifier, valueWrapper);
         if (!isSubDev) {
             try {
@@ -328,14 +334,14 @@ public class ControlPannelActivity extends BaseActivity {
 
     private static IPublishResourceListener resourceListener = new IPublishResourceListener() {
         @Override
-        public void onSuccess(String s, Object o) {
-            Log.d(TAG, "onSuccess() called with: s = [" + s + "], o = [" + o + "]");
+        public void onSuccess(String alinkId, Object o) {
+            AppLog.d(TAG, "onSuccess() called with: alinkId = [" + alinkId + "], o = [" + o + "]");
             showToast("设备状态上报上行成功（code=200），用户可以根据云端返回的data判断是否有不符合的属性上报");
         }
 
         @Override
-        public void onError(String s, AError aError) {
-            Log.d(TAG, "onError() called with: s = [" + s + "], aError = [" + aError + "]");
+        public void onError(String alinkId, AError aError) {
+            AppLog.d(TAG, "onError() called with: alinkId = [" + alinkId + "], aError = [" + aError + "]");
             showToast("设备上报状态失败");
         }
     };
@@ -346,7 +352,7 @@ public class ControlPannelActivity extends BaseActivity {
      * 需要用户在云端定义不同的 Error 的类型
      */
     private void setServiceHandler() {
-        Log.d(TAG, "setServiceHandler() called");
+        AppLog.d(TAG, "setServiceHandler() called");
         IThing thing = null;
         if (!isSubDev) {
             thing = LinkKit.getInstance().getDeviceThing();
@@ -402,19 +408,18 @@ public class ControlPannelActivity extends BaseActivity {
     private ITResRequestHandler mCommonHandler = new ITResRequestHandler() {
         @Override
         public void onProcess(String identify, Object result, ITResResponseCallback itResResponseCallback) {
-            Log.d(TAG, "onProcess() called with: s = [" + identify + "], o = [" + result + "], itResResponseCallback = [" + itResResponseCallback + "]");
-            showToast("收到异步服务调用 " + identify);
+            AppLog.d(TAG, "onProcess() called with: s = [" + identify + "], o = [" + result + "], itResResponseCallback = [" + itResResponseCallback + "]");
+
             try {
                 if (SERVICE_SET.equals(identify)) {
-                    // TODO  用户按照真实设备的接口调用  设置设备的属性
-                    // 设置完真实设备属性之后，上报设置完成的属性值
-                    // 用户根据实际情况判断属性是否设置成功 这里测试直接返回成功
+                    /* 云端下发属性到设备 */
+                    // TODO 1:用户需要按照真实设备的接口调用,设置设备的属性. 用户根据实际情况判断属性是否设置成功.
+                    // TODO 2:设置完真实设备属性之后，上报设置完成的属性值. 这里测试直接返回成功
                     boolean isSetPropertySuccess = true;
                     if (isSetPropertySuccess){
                         if (result instanceof InputParams) {
                             Map<String, ValueWrapper> data = (Map<String, ValueWrapper>) ((InputParams) result).getData();
-//                        data.get()
-
+                            //   data.get()
                             // 响应云端 接收数据成功
                             itResResponseCallback.onComplete(identify, null, null);
                         } else {
@@ -430,12 +435,11 @@ public class ControlPannelActivity extends BaseActivity {
 
                 } else if (SERVICE_GET.equals(identify)){
                     //  初始化的时候将默认值初始化传进来，物模型内部会直接返回云端缓存的值
-
                 } else {
-                    // 根据不同的服务做不同的处理，跟具体的服务有关系
-                    showToast("用户根据真实的服务返回服务的值，请参照set示例");
+                    // 云端下发服务到设备. 根据不同的服务做不同的处理，跟具体的服务有关系
+                    showToast("收到服务调用.用户根据真实的服务返回服务的值");
                     OutputParams outputParams = new OutputParams();
-//                    outputParams.put("op", new ValueWrapper.IntValueWrapper(20));
+                    // 参考例子: outputParams.put("op", new ValueWrapper.IntValueWrapper(20));
                     itResResponseCallback.onComplete(identify,null, outputParams);
                 }
             } catch (Exception e) {
@@ -446,14 +450,14 @@ public class ControlPannelActivity extends BaseActivity {
 
         @Override
         public void onSuccess(Object o, OutputParams outputParams) {
-            Log.d(TAG, "onSuccess() called with: o = [" + o + "], outputParams = [" + outputParams + "]");
-            showToast("注册服务成功");
+            AppLog.d(TAG, "onSuccess() called with: o = [" + o + "], outputParams = [" + outputParams + "]");
+            showToast("服务操作成功");
         }
 
         @Override
         public void onFail(Object o, ErrorInfo errorInfo) {
-            Log.d(TAG, "onFail() called with: o = [" + o + "], errorInfo = [" + errorInfo + "]");
-            showToast("注册服务失败");
+            AppLog.d(TAG, "onFail() called with: o = [" + o + "], errorInfo = [" + errorInfo + "]");
+            showToast("服务操作失败");
         }
     };
 
@@ -754,6 +758,9 @@ public class ControlPannelActivity extends BaseActivity {
         }
     }
 
+    /**
+     * 二进制数据上报示例，需要云端配置对应的脚本对数据进行解析
+     */
     public void thingRawPropertiesPost() {
         try {
             byte[] rawData = {0x01,0x02,0x03,0x04,0x05,0x06,0x07};
@@ -768,13 +775,13 @@ public class ControlPannelActivity extends BaseActivity {
     private static IDevRawDataListener devRawDataListener =  new IDevRawDataListener() {
         @Override
         public void onSuccess(Object o, Object o1) {
-            Log.d(TAG, "onSuccess() called with: s = [" + o1 + "], o = [" + o + "]");
+            AppLog.d(TAG, "onSuccess() called with: s = [" + o1 + "], o = [" + o + "]");
             showToast("数据上行成功，业务处理是否成功参见云端返回数据");
         }
 
         @Override
         public void onFail(Object o, ErrorInfo errorInfo) {
-            Log.d(TAG, "onError() called with: s = [" + o + "], aError = [" + errorInfo + "]");
+            AppLog.d(TAG, "onError() called with: s = [" + o + "], aError = [" + errorInfo + "]");
             showToast("设备上报状态失败");
         }
     };

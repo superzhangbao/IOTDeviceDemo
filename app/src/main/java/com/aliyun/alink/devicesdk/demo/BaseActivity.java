@@ -3,9 +3,9 @@ package com.aliyun.alink.devicesdk.demo;
 import android.app.Activity;
 import android.util.Log;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.aliyun.alink.linksdk.tools.ALog;
+import com.aliyun.alink.devicesdk.app.AppLog;
+import com.aliyun.alink.devicesdk.manager.ToastUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -29,20 +29,15 @@ import java.util.Date;
  */
 
 public class BaseActivity extends Activity {
+      static final String TAG = "BaseActivity";
     protected static SimpleDateFormat fm = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
 
-    private String logStr = null;
-    private TextView textView = null;
-    protected String TAG = getClass().getSimpleName();
+    protected String logStr = null;
+    protected TextView textView = null;
 
-    public void showToast(final String message){
-        ALog.d(TAG, "showToast() called with: message = [" + message + "]");
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getBaseContext(), message, Toast.LENGTH_SHORT).show();
-            }
-        });
+    public static void showToast(final String message){
+        AppLog.d(TAG, "showToast() called with: message = [" + message + "]");
+        ToastUtils.showToast(message);
     }
 
     @Override
@@ -51,17 +46,29 @@ public class BaseActivity extends Activity {
         logStr = null;
     }
 
-    public void log(String tag, String message){
+    public void log(final String tag, final String message){
         if (textView == null){
             textView = findViewById(R.id.textview_console);
         }
-        if (textView != null){
-            logStr += message + "\n";
-            textView.setText(logStr);
-        } else {
-            Log.d(TAG, "textview=null");
+        if (textView == null) {
+            return;
         }
-        Log.d(TAG, message);
+        try {
+            textView.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (textView != null){
+                        logStr += message + "\n";
+                        textView.setText(logStr);
+                    } else {
+                        AppLog.d(TAG, "textview=null");
+                    }
+                    AppLog.d(TAG, message);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     protected String getTime(){

@@ -1,15 +1,9 @@
 package com.aliyun.alink.devicesdk.demo;
 
-import android.util.Log;
-
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.aliyun.alink.dm.model.RequestModel;
 import com.aliyun.alink.linkkit.api.LinkKit;
-import com.aliyun.alink.linksdk.cmp.core.base.ARequest;
-import com.aliyun.alink.linksdk.cmp.core.base.AResponse;
-import com.aliyun.alink.linksdk.cmp.core.listener.IConnectSendListener;
-import com.aliyun.alink.linksdk.tools.AError;
 
 import java.util.List;
 import java.util.Map;
@@ -33,6 +27,7 @@ import java.util.Map;
  */
 
 public class LabelActivity extends BaseTemplateActivity {
+    private static final String TAG = "LabelActivity";
 
     private String updateLabel = "{" + "  \"id\": \"123\"," + "  \"version\": \"1.0\"," +
             "  \"params\": [" + "    {" + "      \"attrKey\": \"Temperature\"," +
@@ -55,44 +50,12 @@ public class LabelActivity extends BaseTemplateActivity {
     }
 
     @Override
-    protected void onFunc6Click() {
-
-    }
-
-    @Override
-    protected void onFunc5Click() {
-
-    }
-
-    @Override
-    protected void onFunc4Click() {
-
-    }
-
-    @Override
-    protected void onFunc3Click() {
-
-    }
-
-    @Override
     protected void onFunc2Click() {
         try {
             String labelsData = funcET2.getText().toString();
             RequestModel<List<Map>> requestModel = JSONObject.parseObject(labelsData, new TypeReference<RequestModel<List<Map>>>() {
             }.getType());
-            LinkKit.getInstance().getDeviceLabel().labelDelete(requestModel, new IConnectSendListener() {
-                @Override
-                public void onResponse(ARequest aRequest, AResponse aResponse) {
-                    Log.d(TAG, "onResponse() called with: aRequest = [" + aRequest + "], aResponse = [" + (aResponse == null ? "" : aResponse.data) + "]");
-                    showToast("删除标签成功");
-                }
-
-                @Override
-                public void onFailure(ARequest aRequest, AError aError) {
-                    Log.d(TAG, "onFailure() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
-                    showToast("删除标签失败");
-                }
-            });
+            LinkKit.getInstance().getDeviceLabel().labelDelete(requestModel, BaseTemplateActivity.mConnectSendListener);
         } catch (Exception e) {
             showToast("数据格式不对");
             e.printStackTrace();
@@ -105,19 +68,7 @@ public class LabelActivity extends BaseTemplateActivity {
             String labelsData = funcET1.getText().toString();
             RequestModel<List<Map>> requestModel = JSONObject.parseObject(labelsData, new TypeReference<RequestModel<List<Map>>>() {
             }.getType());
-            LinkKit.getInstance().getDeviceLabel().labelUpdate(requestModel, new IConnectSendListener() {
-                @Override
-                public void onResponse(ARequest aRequest, AResponse aResponse) {
-                    Log.d(TAG, "onResponse() called with: aRequest = [" + aRequest + "], aResponse = [" + (aResponse == null ? "" : aResponse.data) + "]");
-                    showToast("更新标签成功");
-                }
-
-                @Override
-                public void onFailure(ARequest aRequest, AError aError) {
-                    Log.d(TAG, "onFailure() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
-                    showToast("更新标签失败");
-                }
-            });
+            LinkKit.getInstance().getDeviceLabel().labelUpdate(requestModel, BaseTemplateActivity.mConnectSendListener);
         } catch (Exception e) {
             showToast("数据格式不对");
             e.printStackTrace();
