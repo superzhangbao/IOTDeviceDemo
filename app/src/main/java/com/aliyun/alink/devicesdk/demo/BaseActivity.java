@@ -29,7 +29,7 @@ import java.util.Date;
  */
 
 public class BaseActivity extends Activity {
-    private static final String TAG = "BaseActivity";
+      static final String TAG = "BaseActivity";
     protected static SimpleDateFormat fm = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
 
     protected String logStr = null;

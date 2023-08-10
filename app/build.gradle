@@ -5,7 +5,7 @@ def useLinkKitAarDep = true
 android {
     compileSdkVersion 28
     defaultConfig {
-        applicationId "com.aliyun.alink.devicesdk.demo"
+        applicationId "com.aliyun.alink.devicesdk.demo.v2"
         minSdkVersion 19
         targetSdkVersion 28
         versionCode 2

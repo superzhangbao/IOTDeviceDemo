@@ -44,7 +44,7 @@
         <!--http://lazybios.com/2016/12/install-apk-by-intent-compatible-adnroid-n/ -->
         <provider
             android:name="com.aliyun.alink.devicesdk.demo.FileProvider"
-            android:authorities="com.aliyun.alink.devicesdk.demo.auth_fileprovider"
+            android:authorities="com.aliyun.alink.devicesdk.demo.v2.auth_fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
 

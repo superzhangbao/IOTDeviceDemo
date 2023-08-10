@@ -14,7 +14,7 @@ import h2.Constraints;
  * author:  jeeking
  * description: null
  */
-
+@Deprecated
 public class H2Activity extends BaseH2TestActivity {
     private static final String TAG = "H2Activity";
 
@@ -103,7 +103,7 @@ public class H2Activity extends BaseH2TestActivity {
     protected void onFunc2Click() {
         ALog.d(TAG, "onFunc1Click() called openStream and Send data");
         try {
-            openStream(Constraints.DEFAULT_SERVICE_NAME);
+//            openStream(Constraints.DEFAULT_SERVICE_NAME);
         } catch (Exception e) {
             e.printStackTrace();
             ALog.w(TAG, "openStream exception=" + e);

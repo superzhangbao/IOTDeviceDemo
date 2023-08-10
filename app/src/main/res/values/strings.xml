@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">LinkKit Demo</string>
+    <string name="app_name">LinkKitv2</string>
 
     <string name="devicedetail_properties">属性列表</string>
     <string name="devicedetail_propertynamedesc">属性名:</string>
