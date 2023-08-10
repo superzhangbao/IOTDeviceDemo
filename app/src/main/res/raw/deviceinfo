@@ -1,20 +1,70 @@
 {
-    "productKey": "a1KiHgH1DKF",
-    "deviceName": "cs101",
-    "productSecret": "nBdHgxetPnAIxcaR",
-    "deviceSecret": "W0s1rWphk4RQcF0l0QVu2Wzgy5wsOBnr",
+    /**
+     * 物联网平台为产品颁发的全局唯一标识符
+     */
+    "productKey": "",
+
+     /**
+       * 设备在产品内的唯一标识符
+       */
+    "deviceName": "",
+
+    /**
+     * 产品秘钥,一型一密(预注册/免预注册)的情况下需要填入,否则为空
+     */
+    "productSecret": "",
+
+    /**
+     * 物联网平台为设备颁发的设备密钥，用于认证加密. 一机一密情况下需要填入, 否则为空
+     */
+    "deviceSecret": "",
+
+    /**
+     * 如果productSecret不为空,但deviceSecret为空,表明设备采用一型一密方式进行认证
+     * registerType表示一型一密的类型: 输入空字符串"", 表示预注册; 输入regnwl, 表示免预注册
+     * 默认(不填)为预注册.
+     */
+    "registerType": "",
+
+    /**
+     *  设置实例的实例id.
+     *  使用公共/企业实例接入的客户, 如果实例详情有实例的id, 需要将该实例id填入.默认为空.
+     *  格式如 iot-0****l
+     */
+    "instanceId": "",
+
+    /**
+     *  对于企业实例, 或者2021年07月30日之后（含当日）开通的物联网平台服务下公共实例, 请使用带实例id的url接入，
+     *  使用公共/企业实例接入的客户, 如果实例详情中带有接入点信息, 也可以用该接入点接入. 实例接入点的参考格式如:
+     *  "{instanceid}.mqtt.iothub.aliyuncs.com:443"
+     *
+     *  对于2021年07月30日之前（不含当日）开通的物联网平台服务下公共实例，
+     *  实例接入点的格式如: "{YourProductKey}.iot-as-mqtt.{region}.aliyuncs.com:443" ,
+     *  region默认cn-shanghai, 如果用户的region属于上海, 请不要再设置. 否则, 请在如下域名中选择
+     *      | ${YourProductKey}.iot-as-mqtt.cn-shanghai.aliyuncs.com      | Shanghai  | 443
+     *      | ${YourProductKey}.iot-as-mqtt.ap-southeast-1.aliyuncs.com   | Singapore | 443
+     *      | ${YourProductKey}.iot-as-mqtt.ap-northeast-1.aliyuncs.com   | Japan     | 443
+     *      | ${YourProductKey}.iot-as-mqtt.us-west-1.aliyuncs.com        | West-US   | 443
+     *      | ${YourProductKey}.iot-as-mqtt.eu-central-1.aliyuncs.com     | EU        | 443
+     *  注：北京/深圳region的用户，请参照上文的企业实例填入接入点，不要用本段提到的带region信息的接入点
+     *
+     *  详情请参照https://help.aliyun.com/document_detail/147356.htm
+     */
+    "mqttHost": "",
+
+    /**
+     *  网关/子设备连云情况下需要填写.默认为空.
+     */
     "subDevice": [
       {
           "productKey": "",
+          "productSecret": "",
           "deviceName": ""
       },
       {
           "productKey": "",
-          "deviceName": ""
-      },
-      {
-          "productKey": "",
+          "productSecret": "",
           "deviceName": ""
       }
-  ]
+    ]
 }

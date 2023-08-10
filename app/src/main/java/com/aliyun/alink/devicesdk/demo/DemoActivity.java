@@ -3,17 +3,27 @@ package com.aliyun.alink.devicesdk.demo;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.aliyun.alink.devicesdk.app.AppLog;
 import com.aliyun.alink.devicesdk.app.DemoApplication;
+import com.aliyun.alink.devicesdk.app.DeviceInfoData;
 import com.aliyun.alink.devicesdk.manager.IDemoCallback;
 import com.aliyun.alink.devicesdk.manager.InitManager;
 import com.aliyun.alink.linkkit.api.LinkKit;
+import com.aliyun.alink.linksdk.channel.core.persistent.mqtt.MqttConfigure;
+import com.aliyun.alink.linksdk.cmp.connect.channel.MqttPublishRequest;
+import com.aliyun.alink.linksdk.cmp.core.base.ARequest;
+import com.aliyun.alink.linksdk.cmp.core.base.AResponse;
+import com.aliyun.alink.linksdk.cmp.core.listener.IConnectSendListener;
 import com.aliyun.alink.linksdk.tools.AError;
-import com.aliyun.alink.linksdk.tools.ALog;
+import com.aliyun.alink.linksdk.tools.log.IDGenerater;
+
+import java.util.ArrayList;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 /*
@@ -38,10 +48,11 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
     private static final String TAG = "DemoActivity";
 
     private TextView errorTV = null;
+    private AtomicInteger testDeviceIndex = new AtomicInteger(0);
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        ALog.d(TAG, "onCreate");
+        AppLog.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demo);
         errorTV = findViewById(R.id.id_error_info);
@@ -61,69 +72,10 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            ALog.w(TAG, "setListener exception " + e);
+            AppLog.w(TAG, "setListener exception " + e);
         }
     }
 
-    /**
-     * LP通用接入示例(物模型)
-     */
-    public void startLPTest(View view) {
-        if (!checkReady()) {
-            return;
-        }
-        Intent intent = new Intent(this, ControlPannelActivity.class);
-        startActivity(intent);
-    }
-
-    /**
-     * 设备标签
-     */
-    public void startLabelTest(View view) {
-        if (!checkReady()) {
-            return;
-        }
-        Intent intent = new Intent(this, LabelActivity.class);
-        startActivity(intent);
-    }
-
-    /**
-     * COTA
-     */
-    public void startCOTATest(View view) {
-        if (!checkReady()) {
-            return;
-        }
-        Intent intent = new Intent(this, COTAActivity.class);
-        startActivity(intent);
-    }
-
-    /**
-     * 设备影子
-     */
-    public void startShadowTest(View view) {
-        if (!checkReady()) {
-            return;
-        }
-        showToast("基础版设备影子功能，高级版不适用，需要设备的三元组是基础版才可以测试使用");
-        Intent intent = new Intent(this, ShadowActivity.class);
-        startActivity(intent);
-    }
-
-    /**
-     * 网关接入示例
-     */
-    public void startGatewayTest(View view) {
-        if (!checkReady()) {
-            return;
-        }
-        Intent intent = new Intent(this, GatewayActivity.class);
-        startActivity(intent);
-    }
-
-    /**
-     * OTA示例
-     */
     public void startOTATest(View view) {
         if (!checkReady()) {
             return;
@@ -133,20 +85,77 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
         startActivity(intent);
     }
 
-    /**
-     * H2示例
-     */
-    public void startH2Test(View view) {
+
+    public void startBreezeOTATest(View view) {
         if (!checkReady()) {
             return;
         }
-        Intent intent = new Intent(this, H2Activity.class);
+
+//        Intent intent = new Intent(this, BreezeOtaActivity.class);
+//        startActivity(intent);
+    }
+
+    public void startLPTest(View view) {
+        if (!checkReady()) {
+            return;
+        }
+        if (LinkKit.getInstance().getDeviceThing() == null) {
+            showToast("物模型功能未启用");
+            return;
+        }
+        Intent intent = new Intent(this, TSLActivity.class);
         startActivity(intent);
     }
 
-    /**
-     * H2文件上传示例
-     */
+    public void startLabelTest(View view) {
+        if (!checkReady()) {
+            return;
+        }
+        Intent intent = new Intent(this, LabelActivity.class);
+        startActivity(intent);
+    }
+
+    public void startCOTATest(View view) {
+        if (!checkReady()) {
+            return;
+        }
+        Intent intent = new Intent(this, COTAActivity.class);
+        startActivity(intent);
+    }
+
+    public void startShadowTest(View view) {
+        if (!checkReady()) {
+            return;
+        }
+        Intent intent = new Intent(this, ShadowActivity.class);
+        startActivity(intent);
+    }
+
+    public void startGatewayTest(View view) {
+        if (!checkReady()) {
+            return;
+        }
+        if (LinkKit.getInstance().getGateway() == null) {
+            showToast("网关功能未启用");
+            return;
+        }
+        Intent intent = new Intent(this, GatewayActivity.class);
+        startActivity(intent);
+    }
+
+    private boolean checkReady() {
+        if (DemoApplication.userDevInfoError) {
+            showToast("设备三元组信息res/raw/deviceinfo格式错误");
+            return false;
+        }
+        if (!DemoApplication.isInitDone) {
+            showToast("初始化尚未成功，请稍后点击");
+            return false;
+        }
+        errorTV.setVisibility(View.GONE);
+        return true;
+    }
+
     public void startH2FileTest(View view) {
         if (!checkReady()) {
             return;
@@ -154,6 +163,28 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
         Intent intent = new Intent(this, H2FileManagerActivity.class);
         startActivity(intent);
     }
+
+    public void startLogPush(View view) {
+        if (!checkReady()) {
+            return;
+        }
+        Intent intent = new Intent(this, LogPushActivity.class);
+        startActivity(intent);
+    }
+
+    public void startMqttTest(View view) {
+        if (!checkReady()) {
+            return;
+        }
+        Intent intent = new Intent(this, MqttActivity.class);
+        startActivity(intent);
+    }
+
+    private void startResetTest(View v) {
+        Intent intent = new Intent(this, ResetActivity.class);
+        startActivity(intent);
+    }
+
 
     @Override
     public void onClick(View v) {
@@ -176,8 +207,8 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
             case R.id.id_start_ota:
                 startOTATest(v);
                 break;
-            case R.id.id_start_h2:
-                startH2Test(v);
+            case R.id.id_start_breeze_ota:
+                startBreezeOTATest(v);
                 break;
             case R.id.id_start_h2_file:
                 startH2FileTest(v);
@@ -188,49 +219,148 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
             case R.id.id_test_deinit:
                 deinit();
                 break;
-
+            case R.id.id_mqtt_test:
+//                testJniLeakWithCoAP();
+                startMqttTest(v);
+                break;
+            case R.id.id_test_reset:
+                startResetTest(v);
+                break;
+            case R.id.id_log_push:
+                startLogPush(v);
+                break;
         }
     }
 
-    private boolean checkReady() {
-        if (DemoApplication.userDevInfoError) {
-            showToast("设备三元组信息res/raw/deviceinfo格式错误");
-            errorTV.setText("设备三元组信息res/raw/deviceinfo格式错误");
-            errorTV.setVisibility(View.VISIBLE);
-            return false;
-        }
-        if (!DemoApplication.isInitDone) {
-            showToast("初始化尚未成功，请稍后点击");
-            return false;
-        }
-        errorTV.setVisibility(View.GONE);
-        return true;
+    private static ArrayList<DeviceInfoData> getTestDataList() {
+        ArrayList<DeviceInfoData> infoDataArrayList = new ArrayList<DeviceInfoData>();
+
+        DeviceInfoData test6 = new DeviceInfoData();
+        test6.productKey = DemoApplication.productKey;
+        test6.deviceName = DemoApplication.deviceName;
+        test6.deviceSecret = DemoApplication.deviceSecret;
+        infoDataArrayList.add(test6);
+        return infoDataArrayList;
     }
 
+    /**
+     * 初始化
+     * 耗时操作，建议放到异步线程
+     */
     private void connect() {
-        Log.d(TAG, "connect() called");
+        AppLog.d(TAG, "connect() called");
         // SDK初始化
-        InitManager.init(this, DemoApplication.productKey, DemoApplication.deviceName,
-                DemoApplication.deviceSecret, DemoApplication.productSecret, new IDemoCallback() {
+        DeviceInfoData deviceInfoData = getTestDataList().get(testDeviceIndex.getAndIncrement() % getTestDataList().size());
+        DemoApplication.productKey = deviceInfoData.productKey;
+        DemoApplication.deviceName = deviceInfoData.deviceName;
+        DemoApplication.deviceSecret = deviceInfoData.deviceSecret;
 
-                    @Override
-                    public void onError(AError aError) {
-                        Log.d(TAG, "onError() called with: aError = [" + aError + "]");
-                        // 初始化失败，初始化失败之后需要用户负责重新初始化
-                        // 如一开始网络不通导致初始化失败，后续网络回复之后需要重新初始化
-                        showToast("初始化失败");
-                    }
 
-                    @Override
-                    public void onInitDone(Object data) {
-                        Log.d(TAG, "onInitDone() called with: data = [" + data + "]");
-                        showToast("初始化成功");
-                    }
-                });
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                InitManager.init(DemoActivity.this, DemoApplication.productKey, DemoApplication.deviceName,
+                        DemoApplication.deviceSecret, DemoApplication.productSecret, DemoApplication.mqttHost,new IDemoCallback() {
+
+                            @Override
+                            public void onError(AError aError) {
+                                AppLog.d(TAG, "onError() called with: aError = [" + InitManager.getAErrorString(aError) + "]");
+                                // 初始化失败，初始化失败之后需要用户负责重新初始化
+                                // 如一开始网络不通导致初始化失败，后续网络恢复之后需要重新初始化
+
+                                if (aError != null) {
+//                                    AppLog.d(TAG, "初始化失败，错误信息：" + aError.getCode() + "-" + aError.getSubCode() + ", " + aError.getMsg());
+                                    showToast("初始化失败，错误信息：" + aError.getCode() + "-" + aError.getSubCode() + ", " + aError.getMsg());
+                                } else {
+//                                    AppLog.d(TAG, "初始化失败");
+                                    showToast("初始化失败");
+                                }
+                            }
+
+                            @Override
+                            public void onInitDone(Object data) {
+                                AppLog.d(TAG, "onInitDone() called with: data = [" + data + "]");
+                                DemoApplication.isInitDone = true;
+                                showToast("初始化成功");
+//                                AppLog.d(TAG, "初始化成功");
+                            }
+                        });
+            }
+        }).start();
     }
 
+    /**
+     * 耗时操作，建议放到异步线程
+     * 反初始化同步接口
+     */
     private void deinit() {
-        ALog.d(TAG, "deinit");
-        LinkKit.getInstance().deinit();
+        AppLog.d(TAG, "deinit");
+        DemoApplication.isInitDone = false;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // 同步接口
+                LinkKit.getInstance().deinit();
+                showToast("反初始化成功");
+//                AppLog.d(TAG, "反初始化成功");
+            }
+        }).start();
+    }
+
+    private void publishTest() {
+        try {
+            AppLog.d(TAG, "publishTest called.");
+            MqttPublishRequest request = new MqttPublishRequest();
+            // 支持 0 和 1， 默认0
+            request.qos = 1;
+            request.isRPC = false;
+            request.topic = "/" + DemoApplication.productKey + "/" + DemoApplication.deviceName + "/user/update";
+            request.msgId = String.valueOf(IDGenerater.generateId());
+            // TODO 用户根据实际情况填写 仅做参考
+            request.payloadObj = "{\"id\":\"" + request.msgId + "\", \"version\":\"1.0\"" + ",\"params\":{\"state\":\"1\"} }";
+            LinkKit.getInstance().publish(request, new IConnectSendListener() {
+                @Override
+                public void onResponse(ARequest aRequest, AResponse aResponse) {
+                    AppLog.d(TAG, "onResponse() called with: aRequest = [" + aRequest + "], aResponse = [" + aResponse + "]");
+                    showToast("发布成功");
+                }
+
+                @Override
+                public void onFailure(ARequest aRequest, AError aError) {
+                    AppLog.d(TAG, "onFailure() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
+                    showToast("发布失败 " + (aError != null ? aError.getCode() : "null"));
+                }
+            });
+        } catch (Exception e) {
+            showToast("发布异常 ");
+        }
+    }
+
+
+    private ScheduledFuture future = null;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+//        testJniLeak();
+//        future =future ThreadPool.scheduleAtFixedRate(new Runnable() {
+//            @Override
+//            public void run() {
+//                publishTest();
+//            }
+//        }, 0, 15, TimeUnit.SECONDS);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            if (future != null) {
+                future.cancel(true);
+                future = null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -1,6 +1,4 @@
-package com.aliyun.alink.devicesdk.manager;
-
-import com.aliyun.alink.linkkit.api.ILinkKitConnectListener;
+package com.aliyun.alink.devicesdk.demo;
 
 /*
  * Copyright (c) 2014-2016 Alibaba Group. All rights reserved.
@@ -20,5 +18,8 @@ import com.aliyun.alink.linkkit.api.ILinkKitConnectListener;
  *
  */
 
-public interface IDemoCallback extends ILinkKitConnectListener{
+
+public class FileProvider extends android.support.v4.content.FileProvider {
+
+
 }

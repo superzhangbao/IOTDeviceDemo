@@ -2,7 +2,9 @@ package com.aliyun.alink.devicesdk.app;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.support.multidex.MultiDex;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
@@ -15,13 +17,21 @@ import com.aliyun.alink.devicesdk.manager.InitManager;
 import com.aliyun.alink.dm.api.BaseInfo;
 import com.aliyun.alink.dm.api.DeviceInfo;
 import com.aliyun.alink.dm.model.ResponseModel;
+import com.aliyun.alink.linkkit.api.LinkKit;
+import com.aliyun.alink.linksdk.channel.core.base.IOnCallListener;
+import com.aliyun.alink.linksdk.channel.core.persistent.mqtt.MqttConfigure;
+import com.aliyun.alink.linksdk.channel.core.persistent.mqtt.MqttInitParams;
 import com.aliyun.alink.linksdk.cmp.core.base.ARequest;
 import com.aliyun.alink.linksdk.cmp.core.base.AResponse;
 import com.aliyun.alink.linksdk.cmp.core.listener.IConnectSendListener;
+import com.aliyun.alink.linksdk.id2.Id2ItlsSdk;
 import com.aliyun.alink.linksdk.tools.AError;
 import com.aliyun.alink.linksdk.tools.ALog;
 import com.aliyun.alink.linksdk.tools.ThreadTools;
 import com.google.gson.Gson;
+
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -61,20 +71,43 @@ public class DemoApplication extends Application {
     public static boolean isInitDone = false;
     public static boolean userDevInfoError = false;
     public static DeviceInfoData mDeviceInfoData = null;
-    public static String productKey = null, deviceName = null, deviceSecret = null, productSecret = null;
+
+    public static String productKey = null, deviceName = null, deviceSecret = null, productSecret = null,
+            password = null, username = null,clientId = null, deviceToken = null, mqttHost = null, instanceId = null;
+    public static Context mAppContext = null;
+    private String registerType = null;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        ALog.setLevel(ALog.LEVEL_DEBUG);
+        MultiDex.install(this);
+
+        MqttConfigure.itlsLogLevel = Id2ItlsSdk.DEBUGLEVEL_NODEBUG;
+        AppLog.setLevel(ALog.LEVEL_DEBUG);
+        // 设置心跳时间，默认65秒
+        MqttConfigure.setKeepAliveInterval(65);
+
+//        if (LeakCanary.isInAnalyzerProcess(this)) {
+//            // This process is dedicated to LeakCanary for heap analysis.
+//            // You should not init your app in this process.
+//            return;
+//        }
+//        LeakCanary.install(this);
+        mAppContext = getApplicationContext();
         // 从 raw 读取指定测试文件
         String testData = getFromRaw();
+        AppLog.i(TAG, "sdk version = " + LinkKit.getInstance().getSDKVersion());
         // 解析数据
         getDeviceInfoFrom(testData);
+
+        if (userDevInfoError) {
+            showToast("三元组文件格式不正确，请重新检查格式");
+        }
 
         if (TextUtils.isEmpty(deviceSecret)) {
             tryGetFromSP();
         }
+
         /**
          * 动态注册
          * 只有pk dn ps 的时候 需要先动态注册获取ds，然后使用pk+dn+ds进行初始化建联，如果一开始有ds则无需执行动态注册
@@ -83,48 +116,133 @@ public class DemoApplication extends Application {
          * 如果动态注册之后，应用卸载了，没有保存ds的话，重新安装执行动态注册是会失败的。
          * 注意：动态注册成功，设备上线之后，不能再次执行动态注册，云端会返回已主动注册。
          */
-        if (TextUtils.isEmpty(deviceSecret) && !TextUtils.isEmpty(productSecret)) {
-            InitManager.registerDevice(this, productKey, deviceName, productSecret, new IConnectSendListener() {
+        if (TextUtils.isEmpty(deviceSecret) && !TextUtils.isEmpty(productSecret) && TextUtils.isEmpty(deviceToken)) {
+
+            //参数校验
+            if (false == TextUtils.isEmpty(registerType)) {
+                if (false == "regnwl".equals(registerType)) {
+                    AppLog.d(TAG, "动态注册registerType无效");
+                    showToast("动态注册registerType无效");
+                    return;
+                }
+            }
+
+            MqttInitParams initParams = new MqttInitParams(productKey, productSecret, deviceName, deviceSecret, MqttConfigure.MQTT_SECURE_MODE_TLS);
+
+            //动态注册step1: 确定一型一密的类型(免预注册, 还是非免预注册)
+            //case 1: 如果registerType里面填写了regnwl, 表明设备的一型一密方式为免预注册(即无需创建设备)
+            //case 2: 如果这个字段为空, 则表示为需要预注册的一型一密(需要实现创建设备)
+            // docs: https://help.aliyun.com/document_detail/132111.html?spm=a2c4g.11186623.6.600.4e073f827Y7a8y
+            initParams.registerType = registerType;
+
+            //动态注册step2: 设置动态注册的注册接入点域名
+            MqttConfigure.mqttHost = mqttHost;
+
+            //动态注册step3: 如果用户所用的实例为新版本的公共实例或者企业实例(控制台中有实例详情的页面), 需设置动态注册的实例id
+            MqttConfigure.registerInstanceId = instanceId;
+
+            LinkKit.getInstance().deviceDynamicRegister(this, initParams, new IOnCallListener() {
                 @Override
-                public void onResponse(ARequest aRequest, AResponse aResponse) {
-                    Log.d(TAG, "onResponse() called with: aRequest = [" + aRequest + "], aResponse = [" + (aResponse == null ? "null" : aResponse.data) + "]");
-                    if (aResponse != null && aResponse.data != null) {
-                        // 解析云端返回的数据
-                        ResponseModel<Map<String, String>> response = JSONObject.parseObject(aResponse.data.toString(),
-                                new TypeReference<ResponseModel<Map<String, String>>>() {
-                                }.getType());
-                        if ("200".equals(response.code) && response.data != null && response.data.containsKey("deviceSecret") &&
-                                !TextUtils.isEmpty(response.data.get("deviceSecret"))) {
-                            /**
-                             * 建议将ds保存在非应用目录，确保卸载之后ds仍然可以读取到。
-                             */
-                            deviceSecret = response.data.get("deviceSecret");
-                            // getDeviceSecret success, to build connection.
-                            // 持久化 deviceSecret 初始化建联的时候需要
-                            // 用户需要按照实际场景持久化设备的三元组信息，用于后续的连接
-                            SharedPreferences preferences = getSharedPreferences("deviceAuthInfo", 0);
+                public void onSuccess(com.aliyun.alink.linksdk.channel.core.base.ARequest request, com.aliyun.alink.linksdk.channel.core.base.AResponse response) {
+                    AppLog.i(TAG, "onSuccess() called with: request = [" + request + "], response = [" + response + "]");
+                    // response.data is byte array
+                    try {
+                        String responseData = new String((byte[]) response.data);
+                        JSONObject jsonObject = JSONObject.parseObject(responseData);
+                        String pk = jsonObject.getString("productKey");
+                        String dn = jsonObject.getString("deviceName");
+                        // 非一型一密免预注册返回
+                        String ds = jsonObject.getString("deviceSecret");
+                        // 一型一密免预注册返回
+                        String ci = jsonObject.getString("clientId");
+                        String dt = jsonObject.getString("deviceToken");
+
+                        clientId = ci;
+                        deviceToken = dt;
+                        deviceSecret = ds;
+
+                        // 持久化 clientId & deviceToken 初始化建联的时候需要
+                        // 这里仅为测试代码，请将认证信息持久化到外部存储，确保app清除缓存或者卸载重装后仍能取到
+                        SharedPreferences preferences = getSharedPreferences("deviceAuthInfo", 0);
+                        if ((!TextUtils.isEmpty(clientId) && !TextUtils.isEmpty(deviceToken)) || (!TextUtils.isEmpty(deviceSecret))) {
+                            showToast("一型一密成功");
                             SharedPreferences.Editor editor = preferences.edit();
-                            editor.putString("deviceId", productKey+deviceName);
+                            editor.putString("deviceId", productKey + deviceName);
+                            editor.putString("clientId", clientId);
+                            editor.putString("deviceToken", deviceToken);
                             editor.putString("deviceSecret", deviceSecret);
-                            //提交当前数据
                             editor.commit();
-                            connect();
+                            try {
+                                Thread.sleep(2000);
+                            } catch (Exception e){
+
+                            }
+                            destroyRegisterConnect(true);
+                        } else {
+                            showToast("一型一密失败，返回信息无效 " + responseData);
+                            destroyRegisterConnect(false);
                         }
+                    } catch (Exception e) {
+                        showToast("一型一密失败，返回数据信息无效");
+                        e.printStackTrace();
+                        destroyRegisterConnect(false);
                     }
+
                 }
 
                 @Override
-                public void onFailure(ARequest aRequest, AError aError) {
-                    Log.d(TAG, "onFailure() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
+                public void onFailed(com.aliyun.alink.linksdk.channel.core.base.ARequest request, com.aliyun.alink.linksdk.channel.core.base.AError error) {
+                    AppLog.w(TAG, "onFailed() called with: request = [" + request + "], error = [" + error + "]");
+                    showToast("一型一密失败 " + error);
+                    destroyRegisterConnect(false);
+                }
+
+                @Override
+                public boolean needUISafety() {
+                    return false;
                 }
             });
-        } else if (!TextUtils.isEmpty(deviceSecret)){
+        } else if (!TextUtils.isEmpty(deviceSecret) || !TextUtils.isEmpty(password) || !TextUtils.isEmpty(deviceToken)){
             connect();
         } else {
-            Log.e(TAG, "res/raw/deviceinfo invalid.");
+            AppLog.e(TAG, "res/raw/deviceinfo invalid.");
+            if (!userDevInfoError) {
+                showToast("三元组信息无效，请重新填写");
+            }
+            userDevInfoError = true;
         }
+
     }
 
+    /**
+     * 注意该接口不能在 动态注册回调线程里面调用，mqtt 通道会报 Disconnecting is not allowed from a callback method (32107)
+     * @param needConnect
+     */
+    private void destroyRegisterConnect(final boolean needConnect) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    LinkKit.getInstance().stopDeviceDynamicRegister(10 * 1000, null, new IMqttActionListener() {
+                        @Override
+                        public void onSuccess(IMqttToken iMqttToken) {
+                            AppLog.d(TAG, "onSuccess() called with: iMqttToken = [" + iMqttToken + "]");
+                            if (needConnect) {
+                                connect();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
+                            AppLog.w(TAG, "onFailure() called with: iMqttToken = [" + iMqttToken + "], throwable = [" + throwable + "]");
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
     /**
      * 初始化建联
      * 如果初始化建联失败，需要用户重试去完成初始化，并确保初始化成功。如应用启动的时候无网络，导致失败，可以在网络可以的时候再次执行初始化，成功之后不需要再次执行。
@@ -133,15 +251,25 @@ public class DemoApplication extends Application {
      * onError 初始化失败
      * onInitDone 初始化成功
      *
+     * SDK 支持以userName+password+clientId 的方式登录（不推荐，建议使用三元组建联）
+     * 设置如下参数，InitManager.init的时候 deviceSecret, productSecret 可以不填
+     * MqttConfigure.mqttUserName = username;
+     * MqttConfigure.mqttPassWord = password;
+     * MqttConfigure.mqttClientId = clientId;
+     *
      */
     private void connect() {
-        Log.d(TAG, "connect() called");
+        AppLog.d(TAG, "connect() called");
         // SDK初始化
-        InitManager.init(this, productKey, deviceName, deviceSecret, productSecret, new IDemoCallback() {
+//        MqttConfigure.mqttUserName = username;
+//        MqttConfigure.mqttPassWord = password;
+//        MqttConfigure.mqttClientId = clientId;
+        InitManager.init(this, productKey, deviceName, deviceSecret, productSecret, mqttHost, new IDemoCallback() {
 
             @Override
             public void onError(AError aError) {
-                Log.d(TAG, "onError() called with: aError = [" + aError + "]");
+                AppLog.d(TAG, "onError() called with: aError = [" + aError + "]");
+                AppLog.d(TAG,Log.getStackTraceString(new Throwable()));
                 // 初始化失败，初始化失败之后需要用户负责重新初始化
                 // 如一开始网络不通导致初始化失败，后续网络回复之后需要重新初始化
                 showToast("初始化失败");
@@ -149,11 +277,12 @@ public class DemoApplication extends Application {
 
             @Override
             public void onInitDone(Object data) {
-                Log.d(TAG, "onInitDone() called with: data = [" + data + "]");
+                AppLog.d(TAG, "onInitDone() called with: data = [" + data + "]");
                 showToast("初始化成功");
                 isInitDone = true;
             }
         });
+
     }
 
     /**
@@ -162,43 +291,65 @@ public class DemoApplication extends Application {
      * 动态注册的deviceSecret应该保存在非应用目录，确保应用删除之后，该数据没有被删除。
      */
     private void tryGetFromSP() {
-        Log.d(TAG, "tryGetFromSP() called");
+        AppLog.d(TAG, "tryGetFromSP() called");
         SharedPreferences authInfo = getSharedPreferences("deviceAuthInfo", Activity.MODE_PRIVATE);
         String pkDn = authInfo.getString("deviceId", null);
+        String ci = authInfo.getString("clientId", null);
+        String dt = authInfo.getString("deviceToken", null);
         String ds = authInfo.getString("deviceSecret", null);
-        if (pkDn != null && pkDn.equals(productKey + deviceName) && ds != null) {
-            Log.d(TAG, "tryGetFromSP update ds from sp.");
+        if (pkDn != null && pkDn.equals(productKey + deviceName) &&
+                (!TextUtils.isEmpty(ds) || !TextUtils.isEmpty(dt))) {
+            AppLog.d(TAG, "tryGetFromSP update ds from sp.");
             deviceSecret = ds;
+            clientId = ci;
+            deviceToken = dt;
+        } else {
+            AppLog.d(TAG, "tryGetFromSP no cache data.");
         }
     }
 
     private void getDeviceInfoFrom(String testData) {
-        Log.d(TAG, "getDeviceInfoFrom() called with: testData = [" + testData + "]");
+        AppLog.d(TAG, "getDeviceInfoFrom() called with: testData = [" + testData + "]");
         try {
-            Gson mGson = new Gson();
-            DeviceInfoData deviceInfoData = mGson.fromJson(testData, DeviceInfoData.class);
-            if (deviceInfoData == null) {
-                Log.e(TAG, "getDeviceInfoFrom: file format error.");
+            if (testData == null) {
+                AppLog.e(TAG, "getDeviceInfoFrom: data empty.");
                 userDevInfoError = true;
                 return;
             }
-            Log.d(TAG, "getDeviceInfoFrom deviceInfoData=" + deviceInfoData);
+            Gson mGson = new Gson();
+            DeviceInfoData deviceInfoData = mGson.fromJson(testData, DeviceInfoData.class);
+            if (deviceInfoData == null) {
+                AppLog.e(TAG, "getDeviceInfoFrom: file format error.");
+                userDevInfoError = true;
+                return;
+            }
+            AppLog.d(TAG, "getDeviceInfoFrom deviceInfoData=" + deviceInfoData);
             if (checkValid(deviceInfoData)) {
                 mDeviceInfoData = new DeviceInfoData();
                 mDeviceInfoData.productKey = deviceInfoData.productKey;
                 mDeviceInfoData.productSecret = deviceInfoData.productSecret;
                 mDeviceInfoData.deviceName = deviceInfoData.deviceName;
                 mDeviceInfoData.deviceSecret = deviceInfoData.deviceSecret;
+                mDeviceInfoData.username = deviceInfoData.username;
+                mDeviceInfoData.password = deviceInfoData.password;
+                mDeviceInfoData.clientId = deviceInfoData.clientId;
+                mDeviceInfoData.deviceToken = deviceInfoData.deviceToken;
+                mDeviceInfoData.registerType = deviceInfoData.registerType;
+                mDeviceInfoData.mqttHost = deviceInfoData.mqttHost;
+                mDeviceInfoData.instanceId = deviceInfoData.instanceId;
+
+                userDevInfoError = false;
+
                 mDeviceInfoData.subDevice = new ArrayList<>();
                 if (deviceInfoData.subDevice == null) {
-                    Log.d(TAG, "getDeviceInfoFrom: subDevice empty..");
+                    AppLog.d(TAG, "getDeviceInfoFrom: subDevice empty..");
                     return;
                 }
                 for (int i = 0; i < deviceInfoData.subDevice.size(); i++) {
                     if (checkValid(deviceInfoData.subDevice.get(i))) {
                         mDeviceInfoData.subDevice.add(deviceInfoData.subDevice.get(i));
                     } else {
-                        Log.d(TAG, "getDeviceInfoFrom: subDevice info invalid. discard.");
+                        AppLog.d(TAG, "getDeviceInfoFrom: subDevice info invalid. discard.");
                     }
                 }
 
@@ -206,15 +357,22 @@ public class DemoApplication extends Application {
                 deviceName = mDeviceInfoData.deviceName;
                 deviceSecret = mDeviceInfoData.deviceSecret;
                 productSecret = mDeviceInfoData.productSecret;
+                password = mDeviceInfoData.password;
+                username = mDeviceInfoData.username;
+                clientId = mDeviceInfoData.clientId;
+                deviceToken = mDeviceInfoData.deviceToken;
+                registerType = mDeviceInfoData.registerType;
+                mqttHost = mDeviceInfoData.mqttHost;
+                instanceId = mDeviceInfoData.instanceId;
 
-                Log.d(TAG, "getDeviceInfoFrom: final data=" + mDeviceInfoData);
+                AppLog.d(TAG, "getDeviceInfoFrom: final data=" + mDeviceInfoData);
             } else {
-                Log.e(TAG, "res/raw/deviceinfo error.");
+                AppLog.e(TAG, "res/raw/deviceinfo error.");
                 userDevInfoError = true;
             }
 
         } catch (Exception e) {
-            Log.e(TAG, "getDeviceInfoFrom: e", e);
+            AppLog.e(TAG, "getDeviceInfoFrom: e", e);
             userDevInfoError = true;
         }
 
@@ -227,8 +385,8 @@ public class DemoApplication extends Application {
         if (TextUtils.isEmpty(baseInfo.productKey) || TextUtils.isEmpty(baseInfo.deviceName)) {
             return false;
         }
-        if (baseInfo instanceof DeviceInfo) {
-            if (TextUtils.isEmpty(((DeviceInfo) baseInfo).productSecret) && TextUtils.isEmpty(((DeviceInfo) baseInfo).deviceSecret)) {
+        if (baseInfo instanceof DeviceInfoData) {
+            if (TextUtils.isEmpty(((DeviceInfo) baseInfo).productSecret) && TextUtils.isEmpty(((DeviceInfo) baseInfo).deviceSecret) && TextUtils.isEmpty(((DeviceInfoData) baseInfo).password)) {
                 return false;
             }
         }
@@ -282,5 +440,9 @@ public class DemoApplication extends Application {
                 Toast.makeText(DemoApplication.this, message, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    public static Context getAppContext() {
+        return mAppContext;
     }
 }

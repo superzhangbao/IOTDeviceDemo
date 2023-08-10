@@ -78,7 +78,7 @@ public class EventListAdapter extends BaseAdapter {
         }
         Event event = (Event) getItem(position);
         if (event != null){
-            holder.value.setText(event.getName());
+            holder.value.setText(event.getName() + event.getType());
         }
         return convertView;
     }

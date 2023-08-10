@@ -80,11 +80,15 @@ public class PropertyListAdapter extends BaseAdapter {
         if (property == null) {
             return null;
         }
-        holder.value.setText(property.getName());
+        if (property.getDataType() != null) {
+            holder.value.setText(property.getName() + property.getDataType().getType());
+        } else {
+            holder.value.setText(property.getName());
+        }
         return convertView;
     }
 
-    private final class ViewHolder {
+    private final static class ViewHolder {
         private TextView value;
     }
 }

@@ -6,6 +6,7 @@ import android.view.View;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.aliyun.alink.devicesdk.app.AppLog;
 import com.aliyun.alink.dm.api.IShadowRRPC;
 import com.aliyun.alink.dm.shadow.ShadowResponse;
 import com.aliyun.alink.linkkit.api.LinkKit;
@@ -14,7 +15,6 @@ import com.aliyun.alink.linksdk.cmp.core.base.ARequest;
 import com.aliyun.alink.linksdk.cmp.core.base.AResponse;
 import com.aliyun.alink.linksdk.cmp.core.listener.IConnectRrpcHandle;
 import com.aliyun.alink.linksdk.cmp.core.listener.IConnectSendListener;
-import com.aliyun.alink.linksdk.tmp.device.payload.cloud.ResponsePayload;
 import com.aliyun.alink.linksdk.tools.AError;
 import com.aliyun.alink.linksdk.tools.ThreadTools;
 
@@ -39,9 +39,9 @@ import com.aliyun.alink.linksdk.tools.ThreadTools;
 public class ShadowActivity extends BaseTemplateActivity {
     private static final String TAG = "ShadowActivity";
 
-    private long version = 1;
+    private static long version = 1;
 
-    private String shadowUpdate = "{" + "\"method\": \"update\"," + "\"state\": {" + "\"reported\": {" +
+    private static String shadowUpdate = "{" + "\"method\": \"update\"," + "\"state\": {" + "\"reported\": {" +
             "\"color\": \"red\"" + "}" + "}," + "\"version\": {ver}" + "}";
 
     private String shadowGet = "{" + "\"method\": \"get\"" + "}";
@@ -59,9 +59,6 @@ public class ShadowActivity extends BaseTemplateActivity {
 
     @Override
     protected void initViewData() {
-        // 只有基础版才能使用该功能
-        // 高级版物模型已经具备高级设备影子，这里的接口不适用高级版
-        showToast("基础版功能，高级版物模型已具备更强大的功能");
         funcTV1.setText("更新设备影子");
         funcET1.setText(shadowUpdate);
         funcBT1.setText("更新");
@@ -84,16 +81,6 @@ public class ShadowActivity extends BaseTemplateActivity {
     }
 
     @Override
-    protected void onFunc6Click() {
-
-    }
-
-    @Override
-    protected void onFunc5Click() {
-
-    }
-
-    @Override
     protected void onFunc4Click() {
         listenDownStream();
     }
@@ -111,43 +98,45 @@ public class ShadowActivity extends BaseTemplateActivity {
             showToast("数据格式不对");
             return;
         }
-        LinkKit.getInstance().getDeviceShadow().shadowUpload(data, new IConnectSendListener() {
-            @Override
-            public void onResponse(ARequest aRequest, AResponse aResponse) {
-                Log.d(TAG, "onResponse() called with: aRequest = [" + aRequest + "], aResponse = [" + (aResponse == null ? null : aResponse.data) + "]");
-                showToast("设备影子删除成功");
-                try {
-                    if (aRequest instanceof MqttPublishRequest && aResponse != null) {
-                        String dataStr = null;
-                        if (aResponse.data instanceof byte[]) {
-                            dataStr = new String((byte[]) aResponse.data, "UTF-8");
-                        } else if (aResponse.data instanceof String) {
-                            dataStr = (String) aResponse.data;
-                        } else {
-                            dataStr = String.valueOf(aResponse.data);
-                        }
-                        Log.d(TAG, "dataStr = " + dataStr);
-                        ShadowResponse<String> response = JSONObject.parseObject(dataStr, new TypeReference<ShadowResponse<String>>() {
-                        }.getType());
-                        if (response != null && response.version != null && TextUtils.isDigitsOnly(response.version)) {
-                            version = Long.valueOf(response.version);
-                        }
-                    }
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                    Log.e(TAG, "update version failed.");
-                } catch (Exception e) {
-                    Log.e(TAG, "update response parse exception.");
-                }
-            }
-
-            @Override
-            public void onFailure(ARequest aRequest, AError aError) {
-                Log.d(TAG, "onFailure() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
-                showToast("设备影子删除失败");
-            }
-        });
+        LinkKit.getInstance().getDeviceShadow().shadowUpload(data, deleteListener);
     }
+
+    private static IConnectSendListener deleteListener = new IConnectSendListener() {
+        @Override
+        public void onResponse(ARequest aRequest, AResponse aResponse) {
+            AppLog.d(TAG, "onResponse() called with: aRequest = [" + aRequest + "], aResponse = [" + (aResponse == null ? null : aResponse.data) + "]");
+            showToast("设备影子删除成功");
+            try {
+                if (aRequest instanceof MqttPublishRequest && aResponse != null) {
+                    String dataStr = null;
+                    if (aResponse.data instanceof byte[]) {
+                        dataStr = new String((byte[]) aResponse.data, "UTF-8");
+                    } else if (aResponse.data instanceof String) {
+                        dataStr = (String) aResponse.data;
+                    } else {
+                        dataStr = String.valueOf(aResponse.data);
+                    }
+                    AppLog.d(TAG, "dataStr = " + dataStr);
+                    ShadowResponse<String> response = JSONObject.parseObject(dataStr, new TypeReference<ShadowResponse<String>>() {
+                    }.getType());
+                    if (response != null && response.version != null && TextUtils.isDigitsOnly(response.version)) {
+                        version = Long.valueOf(response.version);
+                    }
+                }
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+                AppLog.e(TAG, "update version failed.");
+            } catch (Exception e) {
+                AppLog.e(TAG, "update response parse exception.");
+            }
+        }
+
+        @Override
+        public void onFailure(ARequest aRequest, AError aError) {
+            AppLog.d(TAG, "onFailure() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
+            showToast("设备影子删除失败");
+        }
+    };
 
     /**
      * 获取设备影子
@@ -156,45 +145,47 @@ public class ShadowActivity extends BaseTemplateActivity {
     @Override
     protected void onFunc2Click() {
         String data = funcET2.getText().toString();
-        LinkKit.getInstance().getDeviceShadow().shadowUpload(data, new IConnectSendListener() {
-            @Override
-            public void onResponse(ARequest aRequest, AResponse aResponse) {
-                Log.d(TAG, "onResponse() called with: aRequest = [" + aRequest + "], aResponse = [" + (aResponse == null ? null : aResponse.data) + "]");
-                showToast("设备影子获取成功");
-
-                try {
-                    if (aRequest instanceof MqttPublishRequest && aResponse != null) {
-                        String dataStr = null;
-                        if (aResponse.data instanceof byte[]) {
-                            dataStr = new String((byte[]) aResponse.data, "UTF-8");
-                        } else if (aResponse.data instanceof String) {
-                            dataStr = (String) aResponse.data;
-                        } else {
-                            dataStr = String.valueOf(aResponse.data);
-                        }
-                        Log.d(TAG, "dataStr = " + dataStr);
-                        ShadowResponse<String> response = JSONObject.parseObject(dataStr, new TypeReference<ShadowResponse<String>>() {
-                        }.getType());
-                        if (response != null && response.version != null && TextUtils.isDigitsOnly(response.version)) {
-                            version = Long.valueOf(response.version);
-                        }
-                    }
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                    Log.e(TAG, "update version failed.");
-                } catch (Exception e) {
-                    Log.e(TAG, "update response parse exception.");
-                }
-
-            }
-
-            @Override
-            public void onFailure(ARequest aRequest, AError aError) {
-                Log.d(TAG, "onFailure() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
-                showToast("设备影子获取失败");
-            }
-        });
+        LinkKit.getInstance().getDeviceShadow().shadowUpload(data, getListener);
     }
+
+    private static IConnectSendListener getListener = new IConnectSendListener() {
+        @Override
+        public void onResponse(ARequest aRequest, AResponse aResponse) {
+            AppLog.d(TAG, "onResponse() called with: aRequest = [" + aRequest + "], aResponse = [" + (aResponse == null ? null : aResponse.data) + "]");
+            showToast("设备影子获取成功");
+
+            try {
+                if (aRequest instanceof MqttPublishRequest && aResponse != null) {
+                    String dataStr = null;
+                    if (aResponse.data instanceof byte[]) {
+                        dataStr = new String((byte[]) aResponse.data, "UTF-8");
+                    } else if (aResponse.data instanceof String) {
+                        dataStr = (String) aResponse.data;
+                    } else {
+                        dataStr = String.valueOf(aResponse.data);
+                    }
+                    AppLog.d(TAG, "dataStr = " + dataStr);
+                    ShadowResponse<String> response = JSONObject.parseObject(dataStr, new TypeReference<ShadowResponse<String>>() {
+                    }.getType());
+                    if (response != null && response.version != null && TextUtils.isDigitsOnly(response.version)) {
+                        version = Long.valueOf(response.version);
+                    }
+                }
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+                AppLog.e(TAG, "update version failed.");
+            } catch (Exception e) {
+                AppLog.e(TAG, "update response parse exception.");
+            }
+
+        }
+
+        @Override
+        public void onFailure(ARequest aRequest, AError aError) {
+            AppLog.d(TAG, "onFailure() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
+            showToast("设备影子获取失败");
+        }
+    };
 
     /**
      * 上报设备影子
@@ -210,94 +201,86 @@ public class ShadowActivity extends BaseTemplateActivity {
             showToast("数据格式不对");
             return;
         }
-        LinkKit.getInstance().getDeviceShadow().shadowUpload(data, new IConnectSendListener() {
-            @Override
-            public void onResponse(ARequest aRequest, AResponse aResponse) {
-                Log.d(TAG, "onResponse() called with: aRequest = [" + aRequest + "], aResponse = [" + (aResponse == null ? null : aResponse.data) + "]");
-                showToast("设备影子更新成功");
-            }
-
-            @Override
-            public void onFailure(ARequest aRequest, AError aError) {
-                Log.d(TAG, "onFailure() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
-                showToast("设备影子更新失败");
-            }
-        });
+        LinkKit.getInstance().getDeviceShadow().shadowUpload(data, reportListener);
     }
 
+    private static IConnectSendListener reportListener = new IConnectSendListener() {
+        @Override
+        public void onResponse(ARequest aRequest, AResponse aResponse) {
+            AppLog.d(TAG, "onResponse() called with: aRequest = [" + aRequest + "], aResponse = [" + (aResponse == null ? null : aResponse.data) + "]");
+            showToast("设备影子更新成功");
+        }
+
+        @Override
+        public void onFailure(ARequest aRequest, AError aError) {
+            AppLog.d(TAG, "onFailure() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
+            showToast("设备影子更新失败");
+        }
+    };
 
     /**
      * 先订阅设备影子的更新 topic
      * 云端下发设备影子数据之后
      */
     public void listenDownStream() {
-
-        ThreadTools.submitTask(new Runnable() {
-            @Override
-            public void run() {
-                LinkKit.getInstance().getDeviceShadow().setShadowChangeListener(new IShadowRRPC() {
-                    @Override
-                    public void onSubscribeSuccess(ARequest aRequest) {
-                        showToast("设备影子下行订阅成功");
-                        log(TAG, "onSubscribeSuccess() called with: aRequest = [" + aRequest + "]");
-                    }
-
-                    @Override
-                    public void onSubscribeFailed(ARequest aRequest, AError aError) {
-                        showToast("设备影子下行订阅失败");
-                        log(TAG, "onSubscribeFailed() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
-                    }
-
-                    @Override
-                    public void onReceived(ARequest aRequest, AResponse aResponse, IConnectRrpcHandle iConnectRrpcHandle) {
-                        log(TAG, "onReceived() called with: aRequest = [" + aRequest + "], iConnectRrpcHandle = [" + iConnectRrpcHandle + "]");
-                        // TODO user logic
-                        showToast("收到设备影子下行指令");
-                        try {
-                            if (aRequest != null) {
-                                String dataStr = null;
-                                if (aResponse.data instanceof byte[]) {
-                                    dataStr = new String((byte[]) aResponse.data, "UTF-8");
-                                } else if (aResponse.data instanceof String) {
-                                    dataStr = (String) aResponse.data;
-                                } else {
-                                    dataStr = String.valueOf(aResponse.data);
-                                }
-                                Log.d(TAG, "dataStr = " + dataStr);
-
-                                ShadowResponse<String> shadowResponse = JSONObject.parseObject(dataStr, new TypeReference<ShadowResponse<String>>() {
-                                }.getType());
-                                if (shadowResponse != null && shadowResponse.version != null && TextUtils.isDigitsOnly(shadowResponse.version)) {
-                                    version = Long.valueOf(shadowResponse.version);
-                                }
-
-                                AResponse response = new AResponse();
-                                // TODO 用户实现控制设备
-                                // 用户控制设备之后 上报影子的值到云端
-                                // 上报设置之后的值到云端
-                                // 根据当前实际值上报
-                                response.data = shadowUpdate.replace("{ver}", String.valueOf(++version));
-                                // 第一个值 replyTopic 有默认值 用户不需要设置
-                                iConnectRrpcHandle.onRrpcResponse(null, response);
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    @Override
-                    public void onResponseSuccess(ARequest aRequest) {
-                        log(TAG, "onResponseSuccess() called with: aRequest = [" + aRequest + "]");
-                    }
-
-                    @Override
-                    public void onResponseFailed(ARequest aRequest, AError aError) {
-                        log(TAG, "onResponseFailed() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
-                    }
-                });
-            }
-        }, false);
+        LinkKit.getInstance().getDeviceShadow().setShadowChangeListener(downListener);
     }
+
+    private static IShadowRRPC downListener = new IShadowRRPC() {
+        @Override
+        public void onSubscribeSuccess(ARequest aRequest) {
+            showToast("设备影子下行订阅成功");
+        }
+
+        @Override
+        public void onSubscribeFailed(ARequest aRequest, AError aError) {
+            showToast("设备影子下行订阅失败");
+        }
+
+        @Override
+        public void onReceived(ARequest aRequest, AResponse aResponse, IConnectRrpcHandle iConnectRrpcHandle) {
+            // TODO user logic
+            showToast("收到设备影子下行指令");
+            try {
+                if (aRequest != null) {
+                    String dataStr = null;
+                    if (aResponse.data instanceof byte[]) {
+                        dataStr = new String((byte[]) aResponse.data, "UTF-8");
+                    } else if (aResponse.data instanceof String) {
+                        dataStr = (String) aResponse.data;
+                    } else {
+                        dataStr = String.valueOf(aResponse.data);
+                    }
+                    AppLog.d(TAG, "dataStr = " + dataStr);
+
+                    ShadowResponse<String> shadowResponse = JSONObject.parseObject(dataStr, new TypeReference<ShadowResponse<String>>() {
+                    }.getType());
+                    if (shadowResponse != null && shadowResponse.version != null && TextUtils.isDigitsOnly(shadowResponse.version)) {
+                        version = Long.valueOf(shadowResponse.version);
+                    }
+
+                    AResponse response = new AResponse();
+                    // TODO 用户实现控制设备
+                    // 用户控制设备之后 上报影子的值到云端
+                    // 上报设置之后的值到云端
+                    // 根据当前实际值上报
+                    response.data = shadowUpdate.replace("{ver}", String.valueOf(++version));
+                    // 第一个值 replyTopic 有默认值 用户不需要设置
+                    iConnectRrpcHandle.onRrpcResponse(null, response);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onResponseSuccess(ARequest aRequest) {
+        }
+
+        @Override
+        public void onResponseFailed(ARequest aRequest, AError aError) {
+        }
+    };
 
 
     /**
@@ -308,17 +291,7 @@ public class ShadowActivity extends BaseTemplateActivity {
             @Override
             public void run() {
                 String updateParams = "{\n" + "\"method\": \"update\",\n" + "\"state\": {\"reported\": {\"color\": \"red\"}},\"version\":" + (++version) + "}";
-                LinkKit.getInstance().getDeviceShadow().shadowUpload(updateParams, new IConnectSendListener() {
-                    @Override
-                    public void onResponse(ARequest aRequest, AResponse aResponse) {
-                        log(TAG, "onResponse() called with: aRequest = [" + aRequest + "], aResponse = [" + (aResponse == null ? "null" : aResponse.data) + "]");
-                    }
-
-                    @Override
-                    public void onFailure(ARequest aRequest, AError aError) {
-                        log(TAG, "onFailure() called with: aRequest = [" + aRequest + "], aError = [" + aError + "]");
-                    }
-                });
+                LinkKit.getInstance().getDeviceShadow().shadowUpload(updateParams, mConnectSendListener);
             }
         }, false);
     }
