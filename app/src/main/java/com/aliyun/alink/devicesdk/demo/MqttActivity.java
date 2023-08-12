@@ -2,11 +2,12 @@ package com.aliyun.alink.devicesdk.demo;
 
 
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import androidx.annotation.Nullable;
 
 import com.aliyun.alink.devicesdk.app.DemoApplication;
 import com.aliyun.alink.linkkit.api.LinkKit;

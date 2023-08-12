@@ -2,8 +2,8 @@ package com.aliyun.alink.devicesdk.demo;
 
 import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.support.v4.app.ActivityCompat;
-import android.util.Log;
+import androidx.core.app.ActivityCompat;
+
 import android.view.View;
 
 import com.aliyun.alink.devicesdk.app.AppLog;

@@ -7,7 +7,7 @@
      /**
        * 设备在产品内的唯一标识符
        */
-    "deviceName": "",
+    "deviceName": "XX10000001A",
 
     /**
      * 产品秘钥,一型一密(预注册/免预注册)的情况下需要填入,否则为空
@@ -21,7 +21,7 @@
 
     /**
      * 如果productSecret不为空,但deviceSecret为空,表明设备采用一型一密方式进行认证
-     * registerType表示一型一密的类型: 输入空字符串"", 表示预注册; 输入regnwl, 表示免预注册
+     * registerType 表示一型一密的类型: 输入空字符串"", 表示预注册; 输入regnwl, 表示免预注册
      * 默认(不填)为预注册.
      */
     "registerType": "",
@@ -58,7 +58,7 @@
     "subDevice": [
       {
           "productKey": "k00c9OOgqW",
-          "productSecret": "f285bfde5b5cdc4559dc4fb26b8b1363",
+          "productSecret": "YC0gJIk3dUpyZaZC",
           "deviceName": "XX10000001A"
       },
 

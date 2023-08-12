@@ -4,26 +4,23 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.multidex.MultiDex;
+//import android.support.multidex.MultiDex;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.multidex.MultiDex;
+
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
 import com.aliyun.alink.devicesdk.demo.R;
 import com.aliyun.alink.devicesdk.manager.IDemoCallback;
 import com.aliyun.alink.devicesdk.manager.InitManager;
 import com.aliyun.alink.dm.api.BaseInfo;
 import com.aliyun.alink.dm.api.DeviceInfo;
-import com.aliyun.alink.dm.model.ResponseModel;
 import com.aliyun.alink.linkkit.api.LinkKit;
 import com.aliyun.alink.linksdk.channel.core.base.IOnCallListener;
 import com.aliyun.alink.linksdk.channel.core.persistent.mqtt.MqttConfigure;
 import com.aliyun.alink.linksdk.channel.core.persistent.mqtt.MqttInitParams;
-import com.aliyun.alink.linksdk.cmp.core.base.ARequest;
-import com.aliyun.alink.linksdk.cmp.core.base.AResponse;
-import com.aliyun.alink.linksdk.cmp.core.listener.IConnectSendListener;
 import com.aliyun.alink.linksdk.id2.Id2ItlsSdk;
 import com.aliyun.alink.linksdk.tools.AError;
 import com.aliyun.alink.linksdk.tools.ALog;
@@ -37,7 +34,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Map;
 
 /*
  * Copyright (c) 2014-2016 Alibaba Group. All rights reserved.

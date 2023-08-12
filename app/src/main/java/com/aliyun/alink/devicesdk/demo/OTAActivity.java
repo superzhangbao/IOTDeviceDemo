@@ -23,10 +23,10 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.annotation.Nullable;
-import android.support.v4.content.FileProvider;
+
+import androidx.annotation.Nullable;
+import androidx.core.content.FileProvider;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 
@@ -36,7 +36,6 @@ import com.aliyun.alink.dm.api.IOta;
 import com.aliyun.alink.dm.api.OtaInfo;
 import com.aliyun.alink.dm.api.ResultCallback;
 import com.aliyun.alink.linkkit.api.LinkKit;
-import com.aliyun.alink.linksdk.tools.ALog;
 
 import java.io.File;
 import java.util.Map;
