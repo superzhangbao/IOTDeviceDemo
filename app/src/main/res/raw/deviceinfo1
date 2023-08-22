@@ -1,18 +1,18 @@
 {
-    /**
+    /**本文件为聚辉测试工程
      * 物联网平台为产品颁发的全局唯一标识符
      */
-    "productKey": "k040lP2ANBJ",
+    "productKey": "k00c9OOgqW3",
 
      /**
        * 设备在产品内的唯一标识符
        */
-    "deviceName": "A10000002A",
+    "deviceName": "XX10000001A",
 
     /**
      * 产品秘钥,一型一密(预注册/免预注册)的情况下需要填入,否则为空
      */
-    "productSecret": "182f2207be09a32341635fc4b3db7d26",
+    "productSecret": "YC0gJIk3dUpyZaZC",
 
     /**
      * 物联网平台为设备颁发的设备密钥，用于认证加密. 一机一密情况下需要填入, 否则为空
@@ -57,9 +57,9 @@
      */
     "subDevice": [
       {
-          "productKey": "k040lP2ANBJ",
-          "productSecret": "182f2207be09a32341635fc4b3db7d26",
-          "deviceName": "A10000002A"
+          "productKey": "k00c9OOgqW3",
+          "productSecret": "YC0gJIk3dUpyZaZC",
+          "deviceName": "XX10000001A"
       },
 
     ]

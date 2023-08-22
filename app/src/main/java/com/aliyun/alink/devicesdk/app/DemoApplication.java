@@ -68,8 +68,7 @@ public class DemoApplication extends Application {
     public static boolean userDevInfoError = false;
     public static DeviceInfoData mDeviceInfoData = null;
 
-    public static String productKey = null, deviceName = null, deviceSecret = null, productSecret = null,
-            password = null, username = null,clientId = null, deviceToken = null, mqttHost = null, instanceId = null;
+    public static String productKey = null, deviceName = null, deviceSecret = null, productSecret = null, password = null, username = null, clientId = null, deviceToken = null, mqttHost = null, instanceId = null;
     public static Context mAppContext = null;
     private String registerType = null;
 
@@ -170,7 +169,7 @@ public class DemoApplication extends Application {
                             editor.commit();
                             try {
                                 Thread.sleep(2000);
-                            } catch (Exception e){
+                            } catch (Exception e) {
 
                             }
                             destroyRegisterConnect(true);
@@ -198,7 +197,7 @@ public class DemoApplication extends Application {
                     return false;
                 }
             });
-        } else if (!TextUtils.isEmpty(deviceSecret) || !TextUtils.isEmpty(password) || !TextUtils.isEmpty(deviceToken)){
+        } else if (!TextUtils.isEmpty(deviceSecret) || !TextUtils.isEmpty(password) || !TextUtils.isEmpty(deviceToken)) {
             connect();
         } else {
             AppLog.e(TAG, "res/raw/deviceinfo invalid.");
@@ -212,6 +211,7 @@ public class DemoApplication extends Application {
 
     /**
      * 注意该接口不能在 动态注册回调线程里面调用，mqtt 通道会报 Disconnecting is not allowed from a callback method (32107)
+     *
      * @param needConnect
      */
     private void destroyRegisterConnect(final boolean needConnect) {
@@ -239,20 +239,20 @@ public class DemoApplication extends Application {
             }
         }).start();
     }
+
     /**
      * 初始化建联
      * 如果初始化建联失败，需要用户重试去完成初始化，并确保初始化成功。如应用启动的时候无网络，导致失败，可以在网络可以的时候再次执行初始化，成功之后不需要再次执行。
      * 初始化成功之后，如果因为网络原因连接断开了，用户不需要执行初始化建联操作，SDK会处理建联。
-     *
+     * <p>
      * onError 初始化失败
      * onInitDone 初始化成功
-     *
+     * <p>
      * SDK 支持以userName+password+clientId 的方式登录（不推荐，建议使用三元组建联）
      * 设置如下参数，InitManager.init的时候 deviceSecret, productSecret 可以不填
      * MqttConfigure.mqttUserName = username;
      * MqttConfigure.mqttPassWord = password;
      * MqttConfigure.mqttClientId = clientId;
-     *
      */
     private void connect() {
         AppLog.d(TAG, "connect() called");
@@ -260,12 +260,14 @@ public class DemoApplication extends Application {
 //        MqttConfigure.mqttUserName = username;
 //        MqttConfigure.mqttPassWord = password;
 //        MqttConfigure.mqttClientId = clientId;
-        InitManager.init(this, productKey, deviceName, deviceSecret, productSecret, mqttHost, new IDemoCallback() {
 
+        AppLog.d(TAG, "" + productKey + "," + "," + deviceName + "," + deviceSecret + "," + productSecret + "," + mqttHost);
+
+        InitManager.init(this, productKey, deviceName, deviceSecret, productSecret, mqttHost, new IDemoCallback() {
             @Override
             public void onError(AError aError) {
                 AppLog.d(TAG, "onError() called with: aError = [" + aError + "]");
-                AppLog.d(TAG,Log.getStackTraceString(new Throwable()));
+                AppLog.d(TAG, Log.getStackTraceString(new Throwable()));
                 // 初始化失败，初始化失败之后需要用户负责重新初始化
                 // 如一开始网络不通导致初始化失败，后续网络回复之后需要重新初始化
                 showToast("初始化失败");
@@ -293,8 +295,7 @@ public class DemoApplication extends Application {
         String ci = authInfo.getString("clientId", null);
         String dt = authInfo.getString("deviceToken", null);
         String ds = authInfo.getString("deviceSecret", null);
-        if (pkDn != null && pkDn.equals(productKey + deviceName) &&
-                (!TextUtils.isEmpty(ds) || !TextUtils.isEmpty(dt))) {
+        if (pkDn != null && pkDn.equals(productKey + deviceName) && (!TextUtils.isEmpty(ds) || !TextUtils.isEmpty(dt))) {
             AppLog.d(TAG, "tryGetFromSP update ds from sp.");
             deviceSecret = ds;
             clientId = ci;
@@ -407,8 +408,7 @@ public class DemoApplication extends Application {
             bufReader = new BufferedReader(inputReader);
             String line = "";
             String Result = "";
-            while ((line = bufReader.readLine()) != null)
-                Result += line;
+            while ((line = bufReader.readLine()) != null) Result += line;
             return Result;
         } catch (Exception e) {
             e.printStackTrace();
@@ -417,12 +417,12 @@ public class DemoApplication extends Application {
                 if (bufReader != null) {
                     bufReader.close();
                 }
-                if (inputReader != null){
+                if (inputReader != null) {
                     inputReader.close();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
