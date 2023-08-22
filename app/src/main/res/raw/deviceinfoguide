@@ -23,17 +23,17 @@
 ## 前提：需要在物联网后台打开动态注册的开关，创建这个deviceName的设备，
 ## 注意：动态注册成功，设备成功建联之后，再次动态注册云端不会再返回三元组信息，只返回已动态注册，所以首次动态注册之后需要保存三元组信息
 {
-    "productKey": "k00c9OOgqW3",
-    "deviceName": "XX10000001A",
-    "productSecret": "YC0gJIk3dUpyZaZC",
+    "productKey": "x",
+    "deviceName": "x",
+    "productSecret": "x",
     "deviceSecret": "",
     "registerType":"",
     "mqttHost": "xxx",
     "instanceId": "xxx",
     "subDevice": [
       {
-          "productKey": "k00c9OOgqW3",
-          "deviceName": "XX10000001A"
+          "productKey": "x",
+          "deviceName": "x"
       },
       {
         "productKey": "",

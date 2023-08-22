@@ -1,5 +1,5 @@
 {
-    /**
+    /**云朵回收
      * 物联网平台为产品颁发的全局唯一标识符
      */
     "productKey": "k040lP2ANBJ",
@@ -12,12 +12,12 @@
     /**
      * 产品秘钥,一型一密(预注册/免预注册)的情况下需要填入,否则为空
      */
-    "productSecret": "182f2207be09a32341635fc4b3db7d26",
+    "productSecret": "uq9ZqxpGCNJXm1fr",
 
     /**
      * 物联网平台为设备颁发的设备密钥，用于认证加密. 一机一密情况下需要填入, 否则为空
      */
-    "deviceSecret": "f285bfde5b5cdc4559dc4fb26b8b1363",
+    "deviceSecret": "182f2207be09a32341635fc4b3db7d26",
 
     /**
      * 如果productSecret不为空,但deviceSecret为空,表明设备采用一型一密方式进行认证
@@ -31,7 +31,7 @@
      *  使用公共/企业实例接入的客户, 如果实例详情有实例的id, 需要将该实例id填入.默认为空.
      *  格式如 iot-0****l
      */
-    "instanceId": "iot-06z00hgzs0e18py",
+    "instanceId": "iot-06z00bett1zm95h",
 
     /**
      *  对于企业实例, 或者2021年07月30日之后（含当日）开通的物联网平台服务下公共实例, 请使用带实例id的url接入，
@@ -50,15 +50,15 @@
      *
      *  详情请参照https://help.aliyun.com/document_detail/147356.htm
      */
-    "mqttHost": "iot-06z00hgzs0e18py.mqtt.iothub.aliyuncs.com",
+    "mqttHost": "iot-06z00bett1zm95h.mqtt.iothub.aliyuncs.com",
 
     /**
      *  网关/子设备连云情况下需要填写.默认为空.
      */
     "subDevice": [
       {
-          "productKey": "k040lP2ANBJ",
-          "productSecret": "182f2207be09a32341635fc4b3db7d26",
+          "productKey": "k040IP2ANBJ",
+          "productSecret": "uq9ZqxpGCNJXm1fr",
           "deviceName": "A10000002A"
       },
 
